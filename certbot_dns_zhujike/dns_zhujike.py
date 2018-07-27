@@ -46,26 +46,36 @@ class Authenticator(dns_common.DNSAuthenticator):
         )
 
     def _perform(self, domain, validation_name, validation):
-        requests.post('https://i.hostker.com/api/dnsAddRecord', {
+        _, domain = domain.split('.', 1)
+        validation_name = '.'.join(validation_name.split('.')[0:2])
+        result = requests.post('https://i.hostker.com/api/dnsAddRecord', data={
             'email': self.credentials.conf('email'),
             'token': self.credentials.conf('token'),
             'domain': domain,
             'header': validation_name,
             'data': validation,
             'type': 'TXT',
-            'ttl': self.ttl
+            'ttl': self.ttl,
         })
+        if int(result.json()['success'])==0:
+            raise errors.PluginError(result.json())
 
     def _cleanup(self, domain, validation_name, validation):
-        domain_info = requests.post('https://i.hostker.com/api/dnsGetRecords', {
+        _, domain = domain.split('.', 1)
+        validation_name = '.'.join(validation_name.split('.')[0:2])
+        domain_info = requests.post('https://i.hostker.com/api/dnsGetRecords', data={
             'email': self.credentials.conf('email'),
             'token': self.credentials.conf('token'),
             'domain': domain
         }).json()
+        if domain_info['success']==0:
+            raise errors.Plugin(result)
         domain_id = (i['id'] for i in domain_info if i['header'] == validation_name)
-        requests.post('https://i.hostker.com/api/dnsDeleteRecord', {
+        result = requests.post('https://i.hostker.com/api/dnsDeleteRecord', data={
             'email': self.credentials.conf('email'),
             'token': self.credentials.conf('token'),
             'id': domain_id
         })
+        if result.json()['success']==0:
+            raise errors.Plugin(result)
 
