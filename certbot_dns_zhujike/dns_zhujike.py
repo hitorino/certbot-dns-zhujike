@@ -70,7 +70,7 @@ class Authenticator(dns_common.DNSAuthenticator):
         }).json()
         if domain_info['success']==0:
             raise errors.Plugin(result)
-        domain_id = (i['id'] for i in domain_info if i['header'] == validation_name)
+        domain_id = [i['id'] for i in domain_info['records'] if i['header'] == validation_name][0]
         result = requests.post('https://i.hostker.com/api/dnsDeleteRecord', data={
             'email': self.credentials.conf('email'),
             'token': self.credentials.conf('token'),
